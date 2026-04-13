@@ -1,0 +1,13 @@
+{
+  "name": "reportist",
+  "private": true,
+  "scripts": {
+    "install:all": "bun --cwd backend install && bun --cwd frontend install",
+    "dev:api": "bun --cwd backend run dev",
+    "dev:web": "bun --cwd frontend run dev",
+    "up": "docker compose up -d",
+    "up:dev": "docker compose -f docker-compose.dev.yml up",
+    "down": "docker compose down",
+    "down:dev": "docker compose -f docker-compose.dev.yml down"
+  }
+}
