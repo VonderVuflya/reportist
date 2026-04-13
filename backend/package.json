@@ -2,9 +2,12 @@
   "name": "backend",
   "scripts": {
     "dev": "bun --env-file=../.env run --hot src/index.ts",
-    "migrate": "bun --env-file=../.env run src/db/migrate.ts"
+    "export:openapi": "bun run scripts/export-openapi.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hono/zod-openapi": "1.3.0",
+    "@scalar/hono-api-reference": "0.10.7",
     "better-auth": "1.6.2",
     "hono": "4.12.12",
     "pg": "8.20.0",
@@ -13,6 +16,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/pg": "8.20.0"
+    "@types/pg": "8.20.0",
+    "typescript": "^6.0.2"
   }
 }

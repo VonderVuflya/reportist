@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { signIn, signUp, signOut, useSession } from './auth/client';
+import { ReportsPage } from './reports/ReportsPage';
 import './App.css';
 
 type AuthMode = 'login' | 'register';
@@ -89,12 +90,18 @@ function AuthForm() {
 function UserView({ user }: { user: { email: string; name: string } }) {
   const handleLogout = () => signOut();
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
-      <h1>Welcome, {user.name}</h1>
-      <p>
-        Signed in as <code>{user.email}</code>
-      </p>
-      <button onClick={handleLogout}>Log out</button>
+    <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ margin: 0 }}>Welcome, {user.name}</h1>
+          <p style={{ margin: 0 }}>
+            Signed in as <code>{user.email}</code>
+          </p>
+        </div>
+        <button onClick={handleLogout}>Log out</button>
+      </header>
+      <hr style={{ margin: '1.5rem 0' }} />
+      <ReportsPage />
     </div>
   );
 }

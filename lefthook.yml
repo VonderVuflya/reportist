@@ -1,0 +1,8 @@
+pre-commit:
+  parallel: false
+  commands:
+    gen-api:
+      run: bun run gen:api
+      stage_fixed: true
+    typecheck:
+      run: bun run typecheck

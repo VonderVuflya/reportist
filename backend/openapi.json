@@ -1,0 +1,56 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Reportist API",
+    "version": "0.1.0"
+  },
+  "components": {
+    "schemas": {
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "body-composition-dynamics"
+          },
+          "name": {
+            "type": "string",
+            "example": "Body composition dynamics"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/api/reports": {
+      "get": {
+        "operationId": "listReports",
+        "tags": [
+          "reports"
+        ],
+        "summary": "List available reports",
+        "responses": {
+          "200": {
+            "description": "Registered report definitions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Report"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

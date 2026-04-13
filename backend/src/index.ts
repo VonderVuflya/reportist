@@ -1,9 +1,11 @@
-import { Hono } from 'hono';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
+
 import { auth } from './auth.ts';
 import { config } from './config.ts';
+import { registerRoutes } from './app.ts';
 
-const app = new Hono();
+const app = new OpenAPIHono();
 
 app.use(
   '*',
@@ -22,6 +24,8 @@ app.get('/api/me', async (c) => {
   if (!session) return c.json({ error: 'unauthorized' }, 401);
   return c.json({ user: session.user });
 });
+
+registerRoutes(app);
 
 export default {
   port: config.API_PORT,

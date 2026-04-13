@@ -5,9 +5,14 @@
     "install:all": "(cd backend && bun install) && (cd frontend && bun install)",
     "dev:api": "bun --cwd backend run dev",
     "dev:web": "bun --cwd frontend run dev",
+    "gen:api": "(cd backend && bun run export:openapi) && (cd frontend && bun run gen:api)",
+    "typecheck": "(cd backend && bun run typecheck) && (cd frontend && bun run typecheck)",
     "up": "docker compose up -d",
     "up:dev": "docker compose -f docker-compose.dev.yml up",
     "down": "docker compose down",
     "down:dev": "docker compose -f docker-compose.dev.yml down"
+  },
+  "devDependencies": {
+    "lefthook": "2.1.5"
   }
 }
