@@ -1,12 +1,18 @@
 {
   "name": "backend",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun --env-file=../.env run --hot src/index.ts",
+    "migrate": "bun --env-file=../.env run src/db/migrate.ts"
   },
   "dependencies": {
-    "hono": "^4.12.12"
+    "better-auth": "1.6.2",
+    "hono": "4.12.12",
+    "pg": "8.20.0",
+    "postgres": "3.4.9",
+    "zod": "4.3.6"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/pg": "8.20.0"
   }
 }

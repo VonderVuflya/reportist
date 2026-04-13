@@ -1,16 +1,46 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-reportist}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-reportist}
+      POSTGRES_DB: ${POSTGRES_DB:-reportist}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reportist} -d ${POSTGRES_DB:-reportist}"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-reportist}:${POSTGRES_PASSWORD:-reportist}@postgres:5432/${POSTGRES_DB:-reportist}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_BASE_URL: http://localhost:${API_PORT:-3000}
+      WEB_ORIGIN: http://localhost:${WEB_PORT:-5173}
     ports:
       - "${API_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:${API_PORT:-3000}
     ports:
       - "${WEB_PORT:-5173}:80"
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  pgdata:

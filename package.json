@@ -2,7 +2,7 @@
   "name": "reportist",
   "private": true,
   "scripts": {
-    "install:all": "bun --cwd backend install && bun --cwd frontend install",
+    "install:all": "(cd backend && bun install) && (cd frontend && bun install)",
     "dev:api": "bun --cwd backend run dev",
     "dev:web": "bun --cwd frontend run dev",
     "up": "docker compose up -d",

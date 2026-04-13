@@ -1,15 +1,38 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-reportist}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-reportist}
+      POSTGRES_DB: ${POSTGRES_DB:-reportist}
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reportist} -d ${POSTGRES_DB:-reportist}"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
   backend:
     image: oven/bun:1-alpine
     working_dir: /app
     command: sh -c "bun install --frozen-lockfile && bun run --hot src/index.ts"
     environment:
       NODE_ENV: development
+      DATABASE_URL: postgres://${POSTGRES_USER:-reportist}:${POSTGRES_PASSWORD:-reportist}@postgres:5432/${POSTGRES_DB:-reportist}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_BASE_URL: http://localhost:${API_PORT:-3000}
+      WEB_ORIGIN: http://localhost:${WEB_PORT:-5173}
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:
       - ./backend:/app
       - backend_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     image: oven/bun:1-alpine
@@ -17,6 +40,7 @@ services:
     command: sh -c "bun install --frozen-lockfile && bun run dev -- --host 0.0.0.0 --port 5173"
     environment:
       NODE_ENV: development
+      VITE_API_URL: http://localhost:${API_PORT:-3000}
     ports:
       - "${WEB_PORT:-5173}:5173"
     volumes:
@@ -28,3 +52,4 @@ services:
 volumes:
   backend_node_modules:
   frontend_node_modules:
+  pgdata_dev:
