@@ -78,11 +78,12 @@ services:
     command: ["api"]
     environment:
       NODE_ENV: production
+      SERVICE_FQDN_API_3000: ${SERVICE_FQDN_API}
       # placeholder, credentials substituted from POSTGRES_* env at runtime
       DATABASE_URL: postgres://${POSTGRES_USER:-reportist}:${POSTGRES_PASSWORD:-reportist}@postgres:5432/${POSTGRES_DB:-reportist}
       AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_BASE_URL: ${AUTH_BASE_URL:-${SERVICE_FQDN_FRONTEND}}
-      WEB_ORIGIN: ${WEB_ORIGIN:-${SERVICE_FQDN_FRONTEND}}
+      AUTH_BASE_URL: ${AUTH_BASE_URL:-${SERVICE_URL_API}}
+      WEB_ORIGIN: ${WEB_ORIGIN:-${SERVICE_URL_FRONTEND}}
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
@@ -118,8 +119,8 @@ services:
       # placeholder, credentials substituted from POSTGRES_* env at runtime
       DATABASE_URL: postgres://${POSTGRES_USER:-reportist}:${POSTGRES_PASSWORD:-reportist}@postgres:5432/${POSTGRES_DB:-reportist}
       AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_BASE_URL: ${AUTH_BASE_URL:-${SERVICE_FQDN_FRONTEND}}
-      WEB_ORIGIN: ${WEB_ORIGIN:-${SERVICE_FQDN_FRONTEND}}
+      AUTH_BASE_URL: ${AUTH_BASE_URL:-${SERVICE_URL_API}}
+      WEB_ORIGIN: ${WEB_ORIGIN:-${SERVICE_URL_FRONTEND}}
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
@@ -146,7 +147,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: ""
+        VITE_API_URL: ${VITE_API_URL:-${SERVICE_URL_API}}
     environment:
       SERVICE_FQDN_FRONTEND_80: ${SERVICE_FQDN_FRONTEND}
     depends_on:
