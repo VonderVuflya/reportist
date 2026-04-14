@@ -73,6 +73,14 @@ const ACTIVITIES: Activity[] = ['strength', 'cardio', 'yoga', 'crossfit', 'boxin
 const VISITS_PER_CLIENT_MONTH = 6;
 
 async function main() {
+  const rows = await sql<{ count: number }[]>`
+    SELECT COUNT(*)::int AS count FROM gyms
+  `;
+  if ((rows[0]?.count ?? 0) > 0 && !process.env.SEED_FORCE) {
+    console.log('[seed] gyms already populated, skipping (set SEED_FORCE=1 to override)');
+    return;
+  }
+
   console.log('[seed] truncating existing data');
   await sql`TRUNCATE visits, measurements, clients, gyms RESTART IDENTITY CASCADE`;
 

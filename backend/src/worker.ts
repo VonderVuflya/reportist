@@ -6,11 +6,9 @@ import { createRedisConnection } from './queue/index.ts';
 import { REPORT_QUEUE, type GenerateReportJob } from './queue/jobs.ts';
 import { runReport } from './reports/runner.ts';
 import { publishRunUpdate } from './sse/publisher.ts';
-import { ensureBucket, putReport } from './storage/minio.ts';
+import { putReport } from './storage/minio.ts';
 
 const log = logger.child({ svc: 'worker' });
-
-await ensureBucket();
 
 const connection = createRedisConnection();
 

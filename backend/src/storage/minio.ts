@@ -13,14 +13,6 @@ export const minioClient = new Client({
 
 export const BUCKET = config.MINIO_BUCKET;
 
-export async function ensureBucket(): Promise<void> {
-  const exists = await minioClient.bucketExists(BUCKET);
-  if (!exists) {
-    await minioClient.makeBucket(BUCKET);
-    console.log(`[minio] created bucket ${BUCKET}`);
-  }
-}
-
 export async function putReport(
   key: string,
   body: Buffer,
