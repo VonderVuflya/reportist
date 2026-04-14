@@ -18,3 +18,10 @@ export const auth = betterAuth({
     },
   },
 });
+
+export async function getSessionUser(
+  headers: Headers,
+): Promise<{ id: string; email: string; name: string } | null> {
+  const session = await auth.api.getSession({ headers });
+  return session?.user ?? null;
+}

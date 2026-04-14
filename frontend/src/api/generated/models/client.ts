@@ -5,7 +5,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Report {
+export interface Client {
   id: string;
-  name: string;
+  fullName: string;
+  gymId: string;
+  gymName: string;
+  city: string;
 }

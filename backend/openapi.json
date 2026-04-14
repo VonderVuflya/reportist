@@ -6,7 +6,7 @@
   },
   "components": {
     "schemas": {
-      "Report": {
+      "ReportMeta": {
         "type": "object",
         "properties": {
           "id": {
@@ -16,11 +16,58 @@
           "name": {
             "type": "string",
             "example": "Body composition dynamics"
+          },
+          "description": {
+            "type": "string"
+          },
+          "supportedFormats": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "xlsx"
+              ]
+            }
+          },
+          "paramsSchema": {
+            "type": "object",
+            "description": "JSON Schema (draft 2020-12) of report parameters"
           }
         },
         "required": [
           "id",
-          "name"
+          "name",
+          "description",
+          "supportedFormats"
+        ]
+      },
+      "Client": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "gymId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gymName": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fullName",
+          "gymId",
+          "gymName",
+          "city"
         ]
       }
     },
@@ -42,8 +89,68 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Report"
+                    "$ref": "#/components/schemas/ReportMeta"
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clients": {
+      "get": {
+        "operationId": "listClients",
+        "tags": [
+          "clients"
+        ],
+        "summary": "List fitness clients available for reports",
+        "responses": {
+          "200": {
+            "description": "Clients with their gym context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Client"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }

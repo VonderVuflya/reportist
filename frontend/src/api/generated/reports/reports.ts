@@ -20,7 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  Report
+  ListReports401,
+  ReportMeta
 } from '../models';
 
 import { customFetch } from '../../fetcher';
@@ -34,16 +35,23 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  * @summary List available reports
  */
 export type listReportsResponse200 = {
-  data: Report[]
+  data: ReportMeta[]
   status: 200
+}
+
+export type listReportsResponse401 = {
+  data: ListReports401
+  status: 401
 }
 
 export type listReportsResponseSuccess = (listReportsResponse200) & {
   headers: Headers;
 };
-;
+export type listReportsResponseError = (listReportsResponse401) & {
+  headers: Headers;
+};
 
-export type listReportsResponse = (listReportsResponseSuccess)
+export type listReportsResponse = (listReportsResponseSuccess | listReportsResponseError)
 
 export const getListReportsUrl = () => {
 
@@ -75,7 +83,7 @@ export const getListReportsQueryKey = () => {
     }
 
 
-export const getListReportsQueryOptions = <TData = Awaited<ReturnType<typeof listReports>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReports>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+export const getListReportsQueryOptions = <TData = Awaited<ReturnType<typeof listReports>>, TError = ListReports401>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReports>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -94,10 +102,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListReportsQueryResult = NonNullable<Awaited<ReturnType<typeof listReports>>>
-export type ListReportsQueryError = unknown
+export type ListReportsQueryError = ListReports401
 
 
-export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, TError = unknown>(
+export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, TError = ListReports401>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReports>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof listReports>>,
@@ -107,7 +115,7 @@ export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, 
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, TError = unknown>(
+export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, TError = ListReports401>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReports>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof listReports>>,
@@ -117,7 +125,7 @@ export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, 
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, TError = unknown>(
+export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, TError = ListReports401>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReports>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -125,7 +133,7 @@ export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, 
  * @summary List available reports
  */
 
-export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, TError = unknown>(
+export function useListReports<TData = Awaited<ReturnType<typeof listReports>>, TError = ListReports401>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReports>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

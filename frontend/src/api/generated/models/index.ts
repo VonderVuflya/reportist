@@ -5,4 +5,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './report';
+export * from './client';
+export * from './listClients401';
+export * from './listReports401';
+export * from './reportMeta';
+export * from './reportMetaParamsSchema';
+export * from './reportMetaSupportedFormatsItem';
