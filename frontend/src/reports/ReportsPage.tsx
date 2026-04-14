@@ -10,6 +10,7 @@ import {
 } from '../api/generated/runs/runs'
 import type { ReportMeta } from '../api/generated/models/reportMeta'
 import type { Run } from '../api/generated/models/run'
+import type { RunFormat } from '../api/generated/models/runFormat'
 import { downloadRun } from '../api/runs'
 
 import { ParamsForm, type FieldOption } from './ParamsForm'
@@ -40,6 +41,7 @@ export function ReportsPage() {
   const clientsQuery = useListClients()
   const queryClient = useQueryClient()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [format, setFormat] = useState<RunFormat | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
@@ -125,17 +127,32 @@ export function ReportsPage() {
     value: c.id,
     label: `${c.fullName} — ${c.gymName}`,
   }))
+  const gymOptions: FieldOption[] = [
+    ...new Map(clients.map((c) => [c.gymId, c.gymName])).entries(),
+  ].map(([id, name]) => ({ value: id, label: name }))
 
   const selected = reports.find((r) => r.id === selectedId) ?? null
+  const effectiveFormat: RunFormat | null =
+    selected && selected.supportedFormats.length > 0
+      ? format && selected.supportedFormats.includes(format)
+        ? format
+        : (selected.supportedFormats[0] as RunFormat)
+      : null
+
+  const handleSelectReport = (id: string) => {
+    setSelectedId(id)
+    setFormat(null)
+    setSubmitError(null)
+  }
 
   const handleRun = async (values: Record<string, string>) => {
-    if (!selected) return
+    if (!selected || !effectiveFormat) return
     setSubmitError(null)
     try {
       await createRunMutation.mutateAsync({
         data: {
           reportId: selected.id,
-          format: 'xlsx',
+          format: effectiveFormat,
           params: values,
         },
       })
@@ -172,7 +189,7 @@ export function ReportsPage() {
             <li key={r.id}>
               <button
                 type='button'
-                onClick={() => setSelectedId(r.id)}
+                onClick={() => handleSelectReport(r.id)}
                 style={{
                   fontWeight: selectedId === r.id ? 600 : 400,
                   outline:
@@ -190,9 +207,36 @@ export function ReportsPage() {
         <div style={{ marginTop: 24 }}>
           <h3 style={{ marginBottom: 4 }}>{selected.name}</h3>
           <p style={{ opacity: 0.8, marginTop: 0 }}>{selected.description}</p>
+          {selected.supportedFormats.length > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+                alignItems: 'center',
+                marginBottom: 12,
+              }}
+            >
+              <span style={{ opacity: 0.8 }}>Format:</span>
+              {selected.supportedFormats.map((f) => (
+                <label
+                  key={f}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                  <input
+                    type='radio'
+                    name='format'
+                    value={f}
+                    checked={effectiveFormat === f}
+                    onChange={() => setFormat(f as RunFormat)}
+                  />
+                  {f.toUpperCase()}
+                </label>
+              ))}
+            </div>
+          )}
           <ParamsForm
             schema={selected.paramsSchema ?? {}}
-            fieldOptions={{ clientId: clientOptions }}
+            fieldOptions={{ clientId: clientOptions, gymId: gymOptions }}
             disabled={createRunMutation.isPending}
             onSubmit={handleRun}
           />

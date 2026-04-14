@@ -10,4 +10,5 @@ export type CreateRunBodyFormat = typeof CreateRunBodyFormat[keyof typeof Create
 
 export const CreateRunBodyFormat = {
   xlsx: 'xlsx',
+  pdf: 'pdf',
 } as const;

@@ -10,4 +10,5 @@ export type RunFormat = typeof RunFormat[keyof typeof RunFormat];
 
 export const RunFormat = {
   xlsx: 'xlsx',
+  pdf: 'pdf',
 } as const;

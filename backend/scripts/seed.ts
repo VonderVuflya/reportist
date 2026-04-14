@@ -68,9 +68,13 @@ function monthlyDate(offset: number): Date {
   return d;
 }
 
+type Activity = 'strength' | 'cardio' | 'yoga' | 'crossfit' | 'boxing';
+const ACTIVITIES: Activity[] = ['strength', 'cardio', 'yoga', 'crossfit', 'boxing'];
+const VISITS_PER_CLIENT_MONTH = 6;
+
 async function main() {
   console.log('[seed] truncating existing data');
-  await sql`TRUNCATE measurements, clients, gyms RESTART IDENTITY CASCADE`;
+  await sql`TRUNCATE visits, measurements, clients, gyms RESTART IDENTITY CASCADE`;
 
   console.log('[seed] inserting gyms');
   const gymRows = await sql<{ id: string; name: string }[]>`
@@ -163,6 +167,50 @@ async function main() {
         'waist_cm',
         'hips_cm',
       )}
+    `;
+  }
+
+  console.log(
+    `[seed] inserting ~${clientRows.length * MONTHS * VISITS_PER_CLIENT_MONTH} visits`,
+  );
+  const visitPayload: Array<{
+    client_id: string;
+    started_at: string;
+    duration_min: number;
+    activity: Activity;
+  }> = [];
+
+  for (const client of clientRows) {
+    for (let m = 0; m < MONTHS; m++) {
+      const monthDate = monthlyDate(m);
+      const year = monthDate.getUTCFullYear();
+      const month = monthDate.getUTCMonth();
+      const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+      const count = Math.max(
+        1,
+        Math.round(VISITS_PER_CLIENT_MONTH + randRange(-2, 2)),
+      );
+      for (let v = 0; v < count; v++) {
+        const day = 1 + Math.floor(faker.number.float({ min: 0, max: daysInMonth - 0.001 }));
+        const hour = 7 + Math.floor(faker.number.float({ min: 0, max: 14 }));
+        const minute = Math.floor(faker.number.float({ min: 0, max: 60 }));
+        const startedAt = new Date(Date.UTC(year, month, day, hour, minute));
+        const duration = Math.round(randRange(35, 95));
+        const activity = ACTIVITIES[Math.floor(faker.number.float({ min: 0, max: ACTIVITIES.length - 0.001 }))]!;
+        visitPayload.push({
+          client_id: client.id,
+          started_at: startedAt.toISOString(),
+          duration_min: duration,
+          activity,
+        });
+      }
+    }
+  }
+
+  for (let i = 0; i < visitPayload.length; i += CHUNK) {
+    const chunk = visitPayload.slice(i, i + CHUNK);
+    await sql`
+      INSERT INTO visits ${sql(chunk, 'client_id', 'started_at', 'duration_min', 'activity')}
     `;
   }
 

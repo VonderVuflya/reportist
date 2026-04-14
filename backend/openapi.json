@@ -25,7 +25,8 @@
             "items": {
               "type": "string",
               "enum": [
-                "xlsx"
+                "xlsx",
+                "pdf"
               ]
             }
           },
@@ -101,7 +102,8 @@
           "format": {
             "type": "string",
             "enum": [
-              "xlsx"
+              "xlsx",
+              "pdf"
             ]
           },
           "params": {
@@ -128,7 +130,8 @@
           "format": {
             "type": "string",
             "enum": [
-              "xlsx"
+              "xlsx",
+              "pdf"
             ]
           },
           "status": {

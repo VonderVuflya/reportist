@@ -1,7 +1,8 @@
 import type { Sql } from 'postgres';
 import type { ZodType } from 'zod';
 
-export type ReportFormat = 'xlsx';
+export const REPORT_FORMATS = ['xlsx', 'pdf'] as const;
+export type ReportFormat = (typeof REPORT_FORMATS)[number];
 
 export type ReportContext = {
   db: Sql;
@@ -23,6 +24,7 @@ export type ReportDefinition<P = unknown, D = unknown> = {
   fetch: (params: P, ctx: ReportContext) => Promise<D>;
   renderers: {
     xlsx?: (data: D, params: P) => Promise<Buffer>;
+    pdf?: (data: D, params: P) => Promise<Buffer>;
   };
 };
 

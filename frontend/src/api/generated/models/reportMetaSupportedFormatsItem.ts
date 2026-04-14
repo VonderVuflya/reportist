@@ -10,4 +10,5 @@ export type ReportMetaSupportedFormatsItem = typeof ReportMetaSupportedFormatsIt
 
 export const ReportMetaSupportedFormatsItem = {
   xlsx: 'xlsx',
+  pdf: 'pdf',
 } as const;

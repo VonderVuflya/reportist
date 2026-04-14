@@ -3,6 +3,7 @@ import { getSessionUser } from '../auth.ts'
 import { sql } from '../db/client.ts'
 import { getReportQueue } from '../queue/index.ts'
 import { getReport } from '../reports/registry.ts'
+import { REPORT_FORMATS, type ReportFormat } from '../reports/types.ts'
 import { subscribeToRun } from '../sse/hub.ts'
 import { getReportStream, statReport } from '../storage/minio.ts'
 
@@ -10,7 +11,7 @@ const RunSchema = z
   .object({
     id: z.uuid(),
     reportId: z.string(),
-    format: z.enum(['xlsx']),
+    format: z.enum(REPORT_FORMATS),
     status: z.enum(['queued', 'running', 'completed', 'failed']),
     params: z.record(z.string(), z.unknown()),
     createdAt: z.string(),
@@ -22,7 +23,7 @@ const RunSchema = z
 const CreateRunBodySchema = z
   .object({
     reportId: z.string(),
-    format: z.enum(['xlsx']),
+    format: z.enum(REPORT_FORMATS),
     params: z.record(z.string(), z.unknown()),
   })
   .openapi('CreateRunBody')
@@ -39,7 +40,7 @@ const ErrorSchema = z.object({ error: z.string() })
 type RunRow = {
   id: string
   report_id: string
-  format: 'xlsx'
+  format: ReportFormat
   status: 'queued' | 'running' | 'completed' | 'failed'
   params: Record<string, unknown>
   created_at: Date

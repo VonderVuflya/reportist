@@ -1,13 +1,14 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { getSessionUser } from '../auth.ts';
 import { listReports } from '../reports/registry.ts';
+import { REPORT_FORMATS } from '../reports/types.ts';
 
 const ReportMetaSchema = z
   .object({
     id: z.string().openapi({ example: 'body-composition-dynamics' }),
     name: z.string().openapi({ example: 'Body composition dynamics' }),
     description: z.string(),
-    supportedFormats: z.array(z.enum(['xlsx'])),
+    supportedFormats: z.array(z.enum(REPORT_FORMATS)),
     paramsSchema: z.any().openapi({
       type: 'object',
       description: 'JSON Schema (draft 2020-12) of report parameters',

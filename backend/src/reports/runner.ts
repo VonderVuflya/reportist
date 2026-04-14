@@ -8,6 +8,7 @@ import {
 
 const CONTENT_TYPES: Record<ReportFormat, string> = {
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pdf: 'application/pdf',
 };
 
 export async function runReport(
