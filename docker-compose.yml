@@ -41,12 +41,11 @@ services:
     volumes:
       - miniodata:/data
     healthcheck:
-      test:
-        - "CMD-SHELL"
-        - "wget --quiet --tries=1 --spider http://localhost:9000/minio/health/live || exit 1"
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 3s
       retries: 10
+      start_period: 10s
     security_opt:
       - no-new-privileges:true
     mem_limit: 512m
@@ -82,8 +81,8 @@ services:
       # placeholder, credentials substituted from POSTGRES_* env at runtime
       DATABASE_URL: postgres://${POSTGRES_USER:-reportist}:${POSTGRES_PASSWORD:-reportist}@postgres:5432/${POSTGRES_DB:-reportist}
       AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_BASE_URL: ${SERVICE_FQDN_FRONTEND}
-      WEB_ORIGIN: ${SERVICE_FQDN_FRONTEND}
+      AUTH_BASE_URL: ${AUTH_BASE_URL:-${SERVICE_FQDN_FRONTEND}}
+      WEB_ORIGIN: ${WEB_ORIGIN:-${SERVICE_FQDN_FRONTEND}}
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
@@ -119,8 +118,8 @@ services:
       # placeholder, credentials substituted from POSTGRES_* env at runtime
       DATABASE_URL: postgres://${POSTGRES_USER:-reportist}:${POSTGRES_PASSWORD:-reportist}@postgres:5432/${POSTGRES_DB:-reportist}
       AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_BASE_URL: ${SERVICE_FQDN_FRONTEND}
-      WEB_ORIGIN: ${SERVICE_FQDN_FRONTEND}
+      AUTH_BASE_URL: ${AUTH_BASE_URL:-${SERVICE_FQDN_FRONTEND}}
+      WEB_ORIGIN: ${WEB_ORIGIN:-${SERVICE_FQDN_FRONTEND}}
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
@@ -154,7 +153,7 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:80/"]
       interval: 10s
       timeout: 3s
       retries: 5
