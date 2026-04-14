@@ -4,6 +4,7 @@
   "scripts": {
     "install:all": "(cd backend && bun install) && (cd frontend && bun install)",
     "dev:api": "bun --cwd backend run dev",
+    "dev:worker": "bun --cwd backend run dev:worker",
     "dev:web": "bun --cwd frontend run dev",
     "gen:api": "(cd backend && bun run export:openapi) && (cd frontend && bun run gen:api)",
     "typecheck": "(cd backend && bun run typecheck) && (cd frontend && bun run typecheck)",

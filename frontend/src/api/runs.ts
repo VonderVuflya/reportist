@@ -1,36 +1,20 @@
 import { baseUrl } from './fetcher';
 
-export type CreateRunInput = {
-  reportId: string;
-  format: 'xlsx';
-  params: Record<string, unknown>;
-};
-
-export type CreateRunResult = {
-  blob: Blob;
-  filename: string;
-};
-
-export async function createRun(input: CreateRunInput): Promise<CreateRunResult> {
-  const res = await fetch(`${baseUrl}/api/runs`, {
-    method: 'POST',
+export async function downloadRun(runId: string): Promise<void> {
+  const res = await fetch(`${baseUrl}/api/runs/${runId}/download`, {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
   });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(
-      `Run failed (${res.status}): ${text.slice(0, 200) || res.statusText}`,
+      `Download failed (${res.status}): ${text.slice(0, 200) || res.statusText}`,
     );
   }
   const disposition = res.headers.get('content-disposition') ?? '';
   const match = disposition.match(/filename="?([^";]+)"?/);
-  const filename = match?.[1] ?? `${input.reportId}.${input.format}`;
-  return { blob: await res.blob(), filename };
-}
+  const filename = match?.[1] ?? `${runId}.xlsx`;
 
-export function triggerDownload({ blob, filename }: CreateRunResult): void {
+  const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

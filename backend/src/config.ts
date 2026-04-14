@@ -6,6 +6,16 @@ const schema = z.object({
   AUTH_BASE_URL: z.url(),
   WEB_ORIGIN: z.url(),
   API_PORT: z.coerce.number().int().positive().default(3000),
+  REDIS_URL: z.url(),
+  MINIO_ENDPOINT: z.string().min(1),
+  MINIO_PORT: z.coerce.number().int().positive().default(9000),
+  MINIO_USE_SSL: z
+    .union([z.literal('true'), z.literal('false')])
+    .default('false')
+    .transform((v) => v === 'true'),
+  MINIO_ACCESS_KEY: z.string().min(1),
+  MINIO_SECRET_KEY: z.string().min(1),
+  MINIO_BUCKET: z.string().min(1).default('reports'),
 });
 
 const parsed = schema.safeParse(process.env);

@@ -6,8 +6,22 @@
  */
 
 export * from './client';
+export * from './createRun400';
+export * from './createRun401';
+export * from './createRunBody';
+export * from './createRunBodyFormat';
+export * from './createRunBodyParams';
+export * from './createRunResponse';
+export * from './createRunResponseStatus';
+export * from './getRun401';
+export * from './getRun404';
 export * from './listClients401';
 export * from './listReports401';
+export * from './listRuns401';
 export * from './reportMeta';
 export * from './reportMetaParamsSchema';
 export * from './reportMetaSupportedFormatsItem';
+export * from './run';
+export * from './runFormat';
+export * from './runParams';
+export * from './runStatus';

@@ -10,4 +10,4 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY src ./src
 EXPOSE 3000
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "run", "src/api.ts"]
