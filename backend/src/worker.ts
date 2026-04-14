@@ -1,11 +1,14 @@
 import { Worker } from 'bullmq';
 
 import { closeDb, sql } from './db/client.ts';
+import { logger } from './logger.ts';
 import { createRedisConnection } from './queue/index.ts';
 import { REPORT_QUEUE, type GenerateReportJob } from './queue/jobs.ts';
 import { runReport } from './reports/runner.ts';
 import { publishRunUpdate } from './sse/publisher.ts';
 import { ensureBucket, putReport } from './storage/minio.ts';
+
+const log = logger.child({ svc: 'worker' });
 
 await ensureBucket();
 
@@ -15,7 +18,7 @@ const worker = new Worker<GenerateReportJob>(
   REPORT_QUEUE,
   async (job) => {
     const { runId, reportId, format, params, userId } = job.data;
-    console.log(`[worker] run ${runId} start (${reportId}/${format})`);
+    log.info({ runId, reportId, format }, 'run start');
 
     await sql`UPDATE runs SET status = 'running' WHERE id = ${runId}`;
     await publishRunUpdate({ id: runId, status: 'running' });
@@ -34,19 +37,19 @@ const worker = new Worker<GenerateReportJob>(
       WHERE id = ${runId}
     `;
     await publishRunUpdate({ id: runId, status: 'completed', resultKey: key });
-    console.log(`[worker] run ${runId} completed → ${key}`);
+    log.info({ runId, key }, 'run completed');
   },
   { connection, concurrency: 4 },
 );
 
 worker.on('ready', () => {
-  console.log(`[worker] listening on queue "${REPORT_QUEUE}"`);
+  log.info({ queue: REPORT_QUEUE }, 'listening on queue');
 });
 
 worker.on('failed', async (job, err) => {
   if (!job) return;
-  console.error(`[worker] run ${job.data.runId} failed:`, err);
   const message = err.message ?? String(err);
+  log.error({ err, runId: job.data.runId }, 'run failed');
   try {
     await sql`
       UPDATE runs
@@ -59,12 +62,12 @@ worker.on('failed', async (job, err) => {
       errorMessage: message,
     });
   } catch (dbErr) {
-    console.error('[worker] failed to persist failure state:', dbErr);
+    log.error({ err: dbErr, runId: job.data.runId }, 'failed to persist failure state');
   }
 });
 
 const shutdown = async (signal: string) => {
-  console.log(`[worker] ${signal} received, draining`);
+  log.info({ signal }, 'shutdown received, draining');
   try {
     await worker.close();
     await connection.quit();

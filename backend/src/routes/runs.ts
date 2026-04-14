@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getSessionUser } from '../auth.ts'
 import { sql } from '../db/client.ts'
+import { runsEnqueuedCounter } from '../metrics.ts'
 import { getReportQueue } from '../queue/index.ts'
 import { getReport } from '../reports/registry.ts'
 import { REPORT_FORMATS, type ReportFormat } from '../reports/types.ts'
@@ -171,6 +172,11 @@ export function registerRunsRoutes(app: OpenAPIHono): void {
       format: body.format,
       params: body.params,
       userId: user.id,
+    })
+
+    runsEnqueuedCounter.inc({
+      report_id: body.reportId,
+      format: body.format,
     })
 
     return c.json({ id: row.id, status: row.status }, 202)
