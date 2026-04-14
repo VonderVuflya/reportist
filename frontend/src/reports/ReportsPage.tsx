@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+
 import { useListReports } from '../api/generated/reports/reports'
 import { useListClients } from '../api/generated/clients/clients'
 import {
@@ -10,9 +11,29 @@ import {
 import type { ReportMeta } from '../api/generated/models/reportMeta'
 import type { Run } from '../api/generated/models/run'
 import { downloadRun } from '../api/runs'
+
 import { ParamsForm, type FieldOption } from './ParamsForm'
+import { NotificationGate } from './NotificationGate'
+import { notifyIfHidden, useRunSSE, type RunUpdate } from './sse'
 
 const ACTIVE_STATUSES: Run['status'][] = ['queued', 'running']
+
+type ListRunsCache = {
+  status: number
+  data: Run[]
+  headers?: Headers
+}
+
+function RunSubscriber({
+  runId,
+  onUpdate,
+}: {
+  runId: string
+  onUpdate: (update: RunUpdate) => void
+}) {
+  useRunSSE(runId, onUpdate)
+  return null
+}
 
 export function ReportsPage() {
   const reportsQuery = useListReports()
@@ -40,6 +61,50 @@ export function ReportsPage() {
       },
     },
   })
+
+  const handleSSEUpdate = useCallback(
+    (update: RunUpdate) => {
+      let previous: Run | undefined
+      queryClient.setQueryData<ListRunsCache>(
+        getListRunsQueryKey(),
+        (prev) => {
+          if (!prev || prev.status !== 200) return prev
+          const nextData = prev.data.map((r) => {
+            if (r.id !== update.id) return r
+            previous = r
+            return {
+              ...r,
+              status: update.status,
+              resultKey: update.resultKey ?? r.resultKey,
+              errorMessage: update.errorMessage ?? r.errorMessage,
+            }
+          })
+          return { ...prev, data: nextData }
+        },
+      )
+
+      const isTerminal =
+        update.status === 'completed' || update.status === 'failed'
+      if (!isTerminal) return
+      if (previous && !ACTIVE_STATUSES.includes(previous.status)) return
+
+      const reportName =
+        reportsQuery.data?.status === 200
+          ? reportsQuery.data.data.find(
+              (r) => r.id === previous?.reportId,
+            )?.name ?? 'Report'
+          : 'Report'
+      if (update.status === 'completed') {
+        notifyIfHidden(`${reportName} ready`, 'Click to download the file')
+      } else {
+        notifyIfHidden(
+          `${reportName} failed`,
+          update.errorMessage ?? 'Unknown error',
+        )
+      }
+    },
+    [queryClient, reportsQuery.data],
+  )
 
   if (reportsQuery.isPending) return <p>Loading reports…</p>
   if (reportsQuery.error) {
@@ -135,8 +200,27 @@ export function ReportsPage() {
         </div>
       )}
 
+      {runs
+        .filter((r) => ACTIVE_STATUSES.includes(r.status))
+        .map((r) => (
+          <RunSubscriber
+            key={r.id}
+            runId={r.id}
+            onUpdate={handleSSEUpdate}
+          />
+        ))}
+
       <hr style={{ margin: '2rem 0 1rem' }} />
-      <h3>Runs</h3>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <h3 style={{ margin: 0 }}>Runs</h3>
+        <NotificationGate />
+      </div>
       {runs.length === 0 ? (
         <p style={{ opacity: 0.7 }}>No runs yet. Submit one above.</p>
       ) : (

@@ -4,6 +4,7 @@ import { closeDb, sql } from './db/client.ts';
 import { createRedisConnection } from './queue/index.ts';
 import { REPORT_QUEUE, type GenerateReportJob } from './queue/jobs.ts';
 import { runReport } from './reports/runner.ts';
+import { publishRunUpdate } from './sse/publisher.ts';
 import { ensureBucket, putReport } from './storage/minio.ts';
 
 await ensureBucket();
@@ -17,6 +18,7 @@ const worker = new Worker<GenerateReportJob>(
     console.log(`[worker] run ${runId} start (${reportId}/${format})`);
 
     await sql`UPDATE runs SET status = 'running' WHERE id = ${runId}`;
+    await publishRunUpdate({ id: runId, status: 'running' });
 
     const artifact = await runReport(reportId, format, params, {
       db: sql,
@@ -31,6 +33,7 @@ const worker = new Worker<GenerateReportJob>(
       SET status = 'completed', result_key = ${key}
       WHERE id = ${runId}
     `;
+    await publishRunUpdate({ id: runId, status: 'completed', resultKey: key });
     console.log(`[worker] run ${runId} completed → ${key}`);
   },
   { connection, concurrency: 4 },
@@ -43,12 +46,18 @@ worker.on('ready', () => {
 worker.on('failed', async (job, err) => {
   if (!job) return;
   console.error(`[worker] run ${job.data.runId} failed:`, err);
+  const message = err.message ?? String(err);
   try {
     await sql`
       UPDATE runs
-      SET status = 'failed', error_message = ${err.message ?? String(err)}
+      SET status = 'failed', error_message = ${message}
       WHERE id = ${job.data.runId}
     `;
+    await publishRunUpdate({
+      id: job.data.runId,
+      status: 'failed',
+      errorMessage: message,
+    });
   } catch (dbErr) {
     console.error('[worker] failed to persist failure state:', dbErr);
   }

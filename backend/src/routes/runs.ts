@@ -3,6 +3,7 @@ import { getSessionUser } from '../auth.ts'
 import { sql } from '../db/client.ts'
 import { getReportQueue } from '../queue/index.ts'
 import { getReport } from '../reports/registry.ts'
+import { subscribeToRun } from '../sse/hub.ts'
 import { getReportStream, statReport } from '../storage/minio.ts'
 
 const RunSchema = z
@@ -236,6 +237,89 @@ export function registerRunsRoutes(app: OpenAPIHono): void {
         'Content-Type': stat?.contentType ?? 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${filename}"`,
         ...(stat?.size ? { 'Content-Length': String(stat.size) } : {}),
+      },
+    })
+  })
+
+  app.get('/api/runs/:id/sse', async c => {
+    const user = await getSessionUser(c.req.raw.headers)
+    if (!user) return c.json({ error: 'unauthorized' }, 401)
+
+    const id = c.req.param('id')
+    const rows = await sql<RunRow[]>`
+      SELECT id, report_id, format, status, params, created_at, result_key, error_message
+      FROM runs
+      WHERE id = ${id} AND user_id = ${user.id}
+      LIMIT 1
+    `
+    const row = rows[0]
+    if (!row) return c.json({ error: 'not found' }, 404)
+
+    const encoder = new TextEncoder()
+    let unsubscribe: (() => Promise<void>) | null = null
+    let keepalive: ReturnType<typeof setInterval> | null = null
+    let closed = false
+
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const send = (event: string, data: string) => {
+          if (closed) return
+          try {
+            controller.enqueue(
+              encoder.encode(`event: ${event}\ndata: ${data}\n\n`)
+            )
+          } catch {
+            closed = true
+          }
+        }
+
+        send('run', JSON.stringify(rowToRun(row)))
+
+        unsubscribe = await subscribeToRun(id, payload => {
+          send('run', payload)
+        })
+
+        const rowsAfter = await sql<RunRow[]>`
+          SELECT id, report_id, format, status, params, created_at, result_key, error_message
+          FROM runs
+          WHERE id = ${id} AND user_id = ${user.id}
+          LIMIT 1
+        `
+        const rowAfter = rowsAfter[0]
+        if (rowAfter && rowAfter.status !== row.status) {
+          send('run', JSON.stringify(rowToRun(rowAfter)))
+        }
+
+        keepalive = setInterval(() => {
+          if (closed) return
+          try {
+            controller.enqueue(encoder.encode(`: ping\n\n`))
+          } catch {
+            closed = true
+          }
+        }, 15000)
+      },
+      async cancel() {
+        closed = true
+        if (keepalive) {
+          clearInterval(keepalive)
+          keepalive = null
+        }
+        if (unsubscribe) {
+          const u = unsubscribe
+          unsubscribe = null
+          await u()
+        }
+      },
+    })
+
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
       },
     })
   })
