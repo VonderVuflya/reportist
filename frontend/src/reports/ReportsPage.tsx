@@ -17,6 +17,27 @@ import { ParamsForm, type FieldOption } from './ParamsForm'
 import { NotificationGate } from './NotificationGate'
 import { notifyIfHidden, useRunSSE, type RunUpdate } from './sse'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { cn } from '@/lib/utils'
+
 const ACTIVE_STATUSES: Run['status'][] = ['queued', 'running']
 
 type ListRunsCache = {
@@ -47,10 +68,12 @@ export function ReportsPage() {
 
   const runsQuery = useListRuns({
     query: {
-      refetchInterval: (query) => {
+      refetchInterval: query => {
         const data = query.state.data
         if (data?.status !== 200) return false
-        const hasActive = data.data.some((r) => ACTIVE_STATUSES.includes(r.status))
+        const hasActive = data.data.some(r =>
+          ACTIVE_STATUSES.includes(r.status),
+        )
         return hasActive ? 1500 : false
       },
     },
@@ -69,9 +92,9 @@ export function ReportsPage() {
       let previous: Run | undefined
       queryClient.setQueryData<ListRunsCache>(
         getListRunsQueryKey(),
-        (prev) => {
+        prev => {
           if (!prev || prev.status !== 200) return prev
-          const nextData = prev.data.map((r) => {
+          const nextData = prev.data.map(r => {
             if (r.id !== update.id) return r
             previous = r
             return {
@@ -92,9 +115,8 @@ export function ReportsPage() {
 
       const reportName =
         reportsQuery.data?.status === 200
-          ? reportsQuery.data.data.find(
-              (r) => r.id === previous?.reportId,
-            )?.name ?? 'Report'
+          ? (reportsQuery.data.data.find(r => r.id === previous?.reportId)
+              ?.name ?? 'Report')
           : 'Report'
       if (update.status === 'completed') {
         notifyIfHidden(`${reportName} ready`, 'Click to download the file')
@@ -108,10 +130,14 @@ export function ReportsPage() {
     [queryClient, reportsQuery.data],
   )
 
-  if (reportsQuery.isPending) return <p>Loading reports…</p>
+  if (reportsQuery.isPending) {
+    return (
+      <p className='text-sm text-muted-foreground'>Loading reports…</p>
+    )
+  }
   if (reportsQuery.error) {
     return (
-      <p style={{ color: 'tomato' }}>
+      <p className='text-sm text-destructive'>
         Failed to load reports: {String(reportsQuery.error)}
       </p>
     )
@@ -123,15 +149,15 @@ export function ReportsPage() {
     clientsQuery.data?.status === 200 ? clientsQuery.data.data : []
   const runs: Run[] =
     runsQuery.data?.status === 200 ? runsQuery.data.data : []
-  const clientOptions: FieldOption[] = clients.map((c) => ({
+  const clientOptions: FieldOption[] = clients.map(c => ({
     value: c.id,
     label: `${c.fullName} — ${c.gymName}`,
   }))
   const gymOptions: FieldOption[] = [
-    ...new Map(clients.map((c) => [c.gymId, c.gymName])).entries(),
+    ...new Map(clients.map(c => [c.gymId, c.gymName])).entries(),
   ].map(([id, name]) => ({ value: id, label: name }))
 
-  const selected = reports.find((r) => r.id === selectedId) ?? null
+  const selected = reports.find(r => r.id === selectedId) ?? null
   const effectiveFormat: RunFormat | null =
     selected && selected.supportedFormats.length > 0
       ? format && selected.supportedFormats.includes(format)
@@ -171,82 +197,86 @@ export function ReportsPage() {
   }
 
   return (
-    <section style={{ maxWidth: 720, margin: '0 auto' }}>
-      <h2>Reports</h2>
-      {reports.length === 0 ? (
-        <p style={{ opacity: 0.7 }}>No reports registered yet.</p>
-      ) : (
-        <ul
-          style={{
-            listStyle: 'none',
-            padding: 0,
-            display: 'flex',
-            gap: 8,
-            flexWrap: 'wrap',
-          }}
-        >
-          {reports.map((r) => (
-            <li key={r.id}>
-              <button
-                type='button'
-                onClick={() => handleSelectReport(r.id)}
-                style={{
-                  fontWeight: selectedId === r.id ? 600 : 400,
-                  outline:
-                    selectedId === r.id ? '2px solid currentColor' : 'none',
-                }}
-              >
-                {r.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {selected && (
-        <div style={{ marginTop: 24 }}>
-          <h3 style={{ marginBottom: 4 }}>{selected.name}</h3>
-          <p style={{ opacity: 0.8, marginTop: 0 }}>{selected.description}</p>
-          {selected.supportedFormats.length > 1 && (
-            <div
-              style={{
-                display: 'flex',
-                gap: 12,
-                alignItems: 'center',
-                marginBottom: 12,
-              }}
-            >
-              <span style={{ opacity: 0.8 }}>Format:</span>
-              {selected.supportedFormats.map((f) => (
-                <label
-                  key={f}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                >
-                  <input
-                    type='radio'
-                    name='format'
-                    value={f}
-                    checked={effectiveFormat === f}
-                    onChange={() => setFormat(f as RunFormat)}
-                  />
-                  {f.toUpperCase()}
-                </label>
-              ))}
+    <div className='flex flex-col gap-6'>
+      <Card>
+        <CardHeader>
+          <CardTitle>Reports</CardTitle>
+          <CardDescription>
+            Pick a report, fill its parameters, and queue a run.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='flex flex-col gap-6'>
+          {reports.length === 0 ? (
+            <p className='text-sm text-muted-foreground'>
+              No reports registered yet.
+            </p>
+          ) : (
+            <div className='flex flex-wrap gap-2'>
+              {reports.map(r => {
+                const isSelected = selectedId === r.id
+                return (
+                  <Button
+                    key={r.id}
+                    type='button'
+                    variant={isSelected ? 'default' : 'outline'}
+                    onClick={() => handleSelectReport(r.id)}
+                  >
+                    {r.name}
+                  </Button>
+                )
+              })}
             </div>
           )}
-          <ParamsForm
-            schema={selected.paramsSchema ?? {}}
-            fieldOptions={{ clientId: clientOptions, gymId: gymOptions }}
-            disabled={createRunMutation.isPending}
-            onSubmit={handleRun}
-          />
-          {submitError && <p style={{ color: 'tomato' }}>{submitError}</p>}
-        </div>
-      )}
+
+          {selected && (
+            <div className='flex flex-col gap-4 border-t pt-6'>
+              <div>
+                <h3 className='text-base font-semibold'>{selected.name}</h3>
+                <p className='text-sm text-muted-foreground'>
+                  {selected.description}
+                </p>
+              </div>
+
+              {selected.supportedFormats.length > 1 && (
+                <div className='flex flex-col gap-2'>
+                  <Label>Format</Label>
+                  <RadioGroup
+                    value={effectiveFormat ?? undefined}
+                    onValueChange={v => setFormat(v as RunFormat)}
+                    className='flex gap-6'
+                  >
+                    {selected.supportedFormats.map(f => (
+                      <div key={f} className='flex items-center gap-2'>
+                        <RadioGroupItem value={f} id={`format-${f}`} />
+                        <Label htmlFor={`format-${f}`} className='uppercase'>
+                          {f}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              )}
+
+              <ParamsForm
+                schema={selected.paramsSchema ?? {}}
+                fieldOptions={{
+                  clientId: clientOptions,
+                  gymId: gymOptions,
+                }}
+                disabled={createRunMutation.isPending}
+                onSubmit={handleRun}
+              />
+              {submitError && (
+                <p className='text-sm text-destructive'>{submitError}</p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {runs
-        .filter((r) => ACTIVE_STATUSES.includes(r.status))
-        .map((r) => (
+        .filter(r => ACTIVE_STATUSES.includes(r.status))
+        .map(r => (
           <RunSubscriber
             key={r.id}
             runId={r.id}
@@ -254,87 +284,97 @@ export function ReportsPage() {
           />
         ))}
 
-      <hr style={{ margin: '2rem 0 1rem' }} />
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <h3 style={{ margin: 0 }}>Runs</h3>
-        <NotificationGate />
-      </div>
-      {runs.length === 0 ? (
-        <p style={{ opacity: 0.7 }}>No runs yet. Submit one above.</p>
-      ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ textAlign: 'left', borderBottom: '1px solid #444' }}>
-              <th style={{ padding: '4px 8px' }}>Created</th>
-              <th style={{ padding: '4px 8px' }}>Report</th>
-              <th style={{ padding: '4px 8px' }}>Status</th>
-              <th style={{ padding: '4px 8px' }} />
-            </tr>
-          </thead>
-          <tbody>
-            {runs.map((run) => (
-              <tr key={run.id} style={{ borderBottom: '1px solid #333' }}>
-                <td style={{ padding: '4px 8px', whiteSpace: 'nowrap' }}>
-                  {new Date(run.createdAt).toLocaleTimeString()}
-                </td>
-                <td style={{ padding: '4px 8px' }}>{run.reportId}</td>
-                <td style={{ padding: '4px 8px' }}>
-                  <StatusBadge status={run.status} />
-                  {run.status === 'failed' && run.errorMessage && (
-                    <span
-                      title={run.errorMessage}
-                      style={{ opacity: 0.7, marginLeft: 8 }}
-                    >
-                      {run.errorMessage.slice(0, 40)}
-                      {run.errorMessage.length > 40 ? '…' : ''}
-                    </span>
-                  )}
-                </td>
-                <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                  {run.status === 'completed' && (
-                    <button
-                      type='button'
-                      onClick={() => handleDownload(run.id)}
-                    >
-                      Download
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {downloadError && <p style={{ color: 'tomato' }}>{downloadError}</p>}
-    </section>
+      <Card>
+        <CardHeader className='flex flex-row items-center justify-between gap-4'>
+          <div>
+            <CardTitle>Runs</CardTitle>
+            <CardDescription>
+              Your 50 most recent report runs.
+            </CardDescription>
+          </div>
+          <NotificationGate />
+        </CardHeader>
+        <CardContent>
+          {runs.length === 0 ? (
+            <p className='text-sm text-muted-foreground'>
+              No runs yet. Submit one above.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Report</TableHead>
+                  <TableHead>Format</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className='text-right'>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {runs.map(run => (
+                  <TableRow key={run.id}>
+                    <TableCell className='whitespace-nowrap tabular-nums text-muted-foreground'>
+                      {new Date(run.createdAt).toLocaleTimeString()}
+                    </TableCell>
+                    <TableCell className='font-mono text-xs'>
+                      {run.reportId}
+                    </TableCell>
+                    <TableCell className='uppercase text-xs text-muted-foreground'>
+                      {run.format}
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex items-center gap-2'>
+                        <StatusBadge status={run.status} />
+                        {run.status === 'failed' && run.errorMessage && (
+                          <span
+                            className='truncate max-w-56 text-xs text-muted-foreground'
+                            title={run.errorMessage}
+                          >
+                            {run.errorMessage}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className='text-right'>
+                      {run.status === 'completed' && (
+                        <Button
+                          type='button'
+                          size='sm'
+                          variant='outline'
+                          onClick={() => handleDownload(run.id)}
+                        >
+                          Download
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          {downloadError && (
+            <p className='mt-3 text-sm text-destructive'>{downloadError}</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 
+const STATUS_STYLES: Record<Run['status'], string> = {
+  queued: 'bg-muted text-muted-foreground',
+  running: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+  completed: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+  failed: 'bg-destructive/15 text-destructive',
+}
+
 function StatusBadge({ status }: { status: Run['status'] }) {
-  const colors: Record<Run['status'], string> = {
-    queued: '#888',
-    running: '#4a90e2',
-    completed: '#2e7d32',
-    failed: '#c62828',
-  }
   return (
-    <span
-      style={{
-        display: 'inline-block',
-        padding: '2px 8px',
-        borderRadius: 4,
-        fontSize: 12,
-        color: 'white',
-        background: colors[status],
-      }}
+    <Badge
+      variant='secondary'
+      className={cn('capitalize', STATUS_STYLES[status])}
     >
       {status}
-    </span>
+    </Badge>
   )
 }

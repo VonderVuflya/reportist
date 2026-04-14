@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+
 export function NotificationGate() {
   const supported = typeof window !== 'undefined' && 'Notification' in window
   const [perm, setPerm] = useState<NotificationPermission>(
@@ -10,14 +12,16 @@ export function NotificationGate() {
   if (perm !== 'default') return null
 
   return (
-    <button
+    <Button
       type='button'
+      size='sm'
+      variant='outline'
       onClick={async () => {
         const res = await Notification.requestPermission()
         setPerm(res)
       }}
     >
       Enable notifications
-    </button>
+    </Button>
   )
 }

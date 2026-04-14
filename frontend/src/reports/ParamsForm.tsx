@@ -1,97 +1,124 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type JsonSchemaProperty = {
-  type?: string;
-  format?: string;
-  description?: string;
-};
-
-type JsonSchemaObject = {
-  type?: string;
-  properties?: Record<string, JsonSchemaProperty>;
-  required?: string[];
-};
-
-export type FieldOption = { value: string; label: string };
-
-type Props = {
-  schema: JsonSchemaObject;
-  fieldOptions?: Record<string, FieldOption[]>;
-  disabled?: boolean;
-  onSubmit: (values: Record<string, string>) => void | Promise<void>;
-};
-
-function humanize(key: string): string {
-  return key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+  type?: string
+  format?: string
+  description?: string
 }
 
-export function ParamsForm({ schema, fieldOptions, disabled, onSubmit }: Props) {
+type JsonSchemaObject = {
+  type?: string
+  properties?: Record<string, JsonSchemaProperty>
+  required?: string[]
+}
+
+export type FieldOption = { value: string; label: string }
+
+type Props = {
+  schema: JsonSchemaObject
+  fieldOptions?: Record<string, FieldOption[]>
+  disabled?: boolean
+  onSubmit: (values: Record<string, string>) => void | Promise<void>
+}
+
+function humanize(key: string): string {
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
+}
+
+export function ParamsForm({
+  schema,
+  fieldOptions,
+  disabled,
+  onSubmit,
+}: Props) {
   const fields = useMemo(
     () => Object.entries(schema.properties ?? {}),
     [schema.properties],
-  );
-  const required = schema.required ?? [];
+  )
+  const required = schema.required ?? []
 
   const [values, setValues] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    for (const [name] of fields) initial[name] = '';
-    return initial;
-  });
+    const initial: Record<string, string> = {}
+    for (const [name] of fields) initial[name] = ''
+    return initial
+  })
 
-  const handleChange = (name: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setValues((prev) => ({ ...prev, [name]: e.target.value }));
-  };
+  const setValue = (name: string, value: string) => {
+    setValues(prev => ({ ...prev, [name]: value }))
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await onSubmit(values);
-  };
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    await onSubmit(values)
+  }
 
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 420 }}
+      className='flex flex-col gap-4 max-w-md'
     >
       {fields.map(([name, prop]) => {
-        const options = fieldOptions?.[name];
-        const isRequired = required.includes(name);
-        const label = (
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <span>
+        const options = fieldOptions?.[name]
+        const isRequired = required.includes(name)
+        const inputId = `param-${name}`
+        return (
+          <div key={name} className='flex flex-col gap-2'>
+            <Label htmlFor={inputId}>
               {humanize(name)}
-              {isRequired && <span style={{ color: 'tomato' }}> *</span>}
-            </span>
+              {isRequired && (
+                <span className='ml-0.5 text-destructive'>*</span>
+              )}
+            </Label>
             {options ? (
-              <select
+              <Select
                 value={values[name] ?? ''}
-                onChange={handleChange(name)}
-                required={isRequired}
+                onValueChange={v => setValue(name, v)}
                 disabled={disabled}
+                required={isRequired}
               >
-                <option value=''>— choose —</option>
-                {options.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id={inputId} className='w-full'>
+                  <SelectValue placeholder='— choose —' />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map(o => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : (
-              <input
-                type={prop.type === 'string' && prop.format === 'date' ? 'date' : 'text'}
+              <Input
+                id={inputId}
+                type={
+                  prop.type === 'string' && prop.format === 'date'
+                    ? 'date'
+                    : 'text'
+                }
                 value={values[name] ?? ''}
-                onChange={handleChange(name)}
+                onChange={e => setValue(name, e.target.value)}
                 required={isRequired}
                 disabled={disabled}
                 placeholder={prop.description ?? ''}
               />
             )}
-          </label>
-        );
-        return <div key={name}>{label}</div>;
+          </div>
+        )
       })}
-      <button type='submit' disabled={disabled}>
+      <Button type='submit' disabled={disabled} className='self-start'>
         {disabled ? 'Running…' : 'Run'}
-      </button>
+      </Button>
     </form>
-  );
+  )
 }

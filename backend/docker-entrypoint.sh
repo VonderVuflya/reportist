@@ -5,6 +5,8 @@ case "$1" in
   api)
     echo "[entrypoint] applying migrations"
     bun run src/db/migrate.ts
+    echo "[entrypoint] seeding demo data (idempotent)"
+    bun run scripts/seed.ts
     echo "[entrypoint] starting api"
     exec bun run src/api.ts
     ;;
