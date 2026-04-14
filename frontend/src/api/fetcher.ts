@@ -1,4 +1,12 @@
-export const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+function resolveBaseUrl(): string {
+  const env = import.meta.env.VITE_API_URL;
+  if (env === '' && typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return env ?? 'http://localhost:3000';
+}
+
+export const baseUrl = resolveBaseUrl();
 
 export const customFetch = async <T>(
   url: string,
